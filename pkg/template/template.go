@@ -20,7 +20,10 @@ import (
 )
 
 const (
-	ellipsis = "..."
+	ellipsis        = "..."
+	hyperlinkStart  = "\x1b]8;;"
+	hyperlinkClose  = "\x1b]8;;\x1b\\"
+	hyperlinkEscape = "\x1b\\"
 )
 
 // Template is the representation of a template.
@@ -254,7 +257,22 @@ func truncateMultiline(maxWidth int, s string) string {
 	if i := strings.IndexAny(s, "\r\n"); i >= 0 {
 		s = s[:i] + ellipsis
 	}
-	return text.Truncate(maxWidth, s)
+
+	if strings.HasPrefix(s, hyperlinkStart) && strings.HasSuffix(s, hyperlinkClose) {
+		openEnd := strings.Index(s[len(hyperlinkStart):], hyperlinkEscape)
+		if openEnd >= 0 {
+			openEnd += len(hyperlinkStart) + len(hyperlinkEscape)
+			link := s[:openEnd]
+			label := s[openEnd : len(s)-len(hyperlinkClose)]
+			return link + text.Truncate(maxWidth, label) + hyperlinkClose
+		}
+	}
+
+	truncated := text.Truncate(maxWidth, s)
+	if truncated != s && strings.Contains(truncated, hyperlinkStart) && !strings.Contains(truncated, hyperlinkClose) {
+		truncated += hyperlinkClose
+	}
+	return truncated
 }
 
 func hyperlinkFunc(link, text string) string {

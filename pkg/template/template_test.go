@@ -503,6 +503,14 @@ func TestTruncateMultiline(t *testing.T) {
 			},
 			want: "short...",
 		},
+		{
+			name: "closes a truncated hyperlink",
+			args: args{
+				max: 12,
+				s:   "\x1b]8;;https://github.com/notifications\x1b\\build(deps): bump pre-commit\x1b]8;;\x1b\\",
+			},
+			want: "\x1b]8;;https://github.com/notifications\x1b\\build(dep...\x1b]8;;\x1b\\",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
