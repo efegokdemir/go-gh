@@ -91,7 +91,13 @@ func TestConfigDir(t *testing.T) {
 					t.Setenv(k, v)
 				}
 			}
-			assert.Equal(t, tt.output, ConfigDir())
+			expected := tt.output
+			if tt.name == "HOME/USERPROFILE specified" {
+				base, err := os.UserConfigDir()
+				require.NoError(t, err)
+				expected = filepath.Join(base, configSubdir())
+			}
+			assert.Equal(t, expected, ConfigDir())
 		})
 	}
 }
@@ -284,7 +290,13 @@ func TestCacheDir(t *testing.T) {
 					t.Setenv(k, v)
 				}
 			}
-			assert.Equal(t, tt.output, CacheDir())
+			expected := tt.output
+			if tt.name == "tries to use the home dir cache directory" {
+				base, err := os.UserCacheDir()
+				require.NoError(t, err)
+				expected = filepath.Join(base, cacheSubdir())
+			}
+			assert.Equal(t, expected, CacheDir())
 		})
 	}
 

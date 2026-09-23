@@ -246,20 +246,17 @@ func mapFromString(str string) (*yamlmap.Map, error) {
 
 // ConfigDir returns the path to the configuration directory.
 //
-// Config path precedence: GH_CONFIG_DIR, XDG_CONFIG_HOME, AppData (windows only), HOME.
+// Config path precedence: GH_CONFIG_DIR, then the platform's standard user
+// config directory.
 func ConfigDir() string {
-	var path string
 	if a := os.Getenv(ghConfigDir); a != "" {
-		path = a
-	} else if b := os.Getenv(xdgConfigHome); b != "" {
-		path = filepath.Join(b, "gh")
-	} else if c := os.Getenv(appData); runtime.GOOS == "windows" && c != "" {
-		path = filepath.Join(c, "GitHub CLI")
-	} else {
-		d, _ := os.UserHomeDir()
-		path = filepath.Join(d, ".config", "gh")
+		return a
 	}
-	return path
+	base, err := os.UserConfigDir()
+	if err != nil {
+		return filepath.Join(".config", "gh")
+	}
+	return filepath.Join(base, configSubdir())
 }
 
 // StateDir returns the path to the state directory.
@@ -296,21 +293,28 @@ func DataDir() string {
 
 // CacheDir returns the path to the cache directory.
 //
-// Cache path precedence: XDG_CACHE_HOME, LocalAppData (windows only), HOME, legacy gh-cli-cache.
+// Cache path precedence: the platform's standard user cache directory, then
+// the legacy temporary directory when the standard directory is unavailable.
 func CacheDir() string {
-	if a := os.Getenv(xdgCacheHome); a != "" {
-		return filepath.Join(a, "gh")
-	} else if b := os.Getenv(localAppData); runtime.GOOS == "windows" && b != "" {
-		return filepath.Join(b, "GitHub CLI")
-	} else if c, err := os.UserHomeDir(); err == nil {
-		return filepath.Join(c, ".cache", "gh")
-	} else {
-		// Note that this has a minor security issue because /tmp is world-writeable.
-		// As such, it is possible for other users on a shared system to overwrite cached data.
-		// The practical risk of this is low, but it's worth calling out as a risk.
-		// I've included this here for backwards compatibility but we should consider removing it.
-		return filepath.Join(os.TempDir(), "gh-cli-cache")
+	if base, err := os.UserCacheDir(); err == nil {
+		return filepath.Join(base, cacheSubdir())
 	}
+	// Note that this has a minor security issue because /tmp is world-writeable.
+	// As such, it is possible for other users on a shared system to overwrite cached data.
+	// The practical risk of this is low, but it's worth calling out as a risk.
+	// I've included this here for backwards compatibility but we should consider removing it.
+	return filepath.Join(os.TempDir(), "gh-cli-cache")
+}
+
+func configSubdir() string {
+	if runtime.GOOS == "windows" {
+		return "GitHub CLI"
+	}
+	return "gh"
+}
+
+func cacheSubdir() string {
+	return configSubdir()
 }
 
 func readFile(filename string) ([]byte, error) {
