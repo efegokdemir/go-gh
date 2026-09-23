@@ -46,6 +46,16 @@ func TestEvaluateFormatted(t *testing.T) {
 			wantW: "Mona\n8\n",
 		},
 		{
+			name: "fractional number preserves precision",
+			args: args{
+				json:     strings.NewReader(`0.001`),
+				expr:     `.`,
+				indent:   "",
+				colorize: false,
+			},
+			wantW: "0.001\n",
+		},
+		{
 			name: "object as JSON",
 			args: args{
 				json:     strings.NewReader(`{"user":{"login":"monalisa"}}`),
