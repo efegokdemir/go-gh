@@ -20,7 +20,10 @@ import (
 )
 
 const (
-	ellipsis = "..."
+	ellipsis         = "..."
+	hyperlinkStart   = "\x1b]8;;"
+	stringTerminator = "\x1b\\"
+	hyperlinkEnd     = hyperlinkStart + stringTerminator
 )
 
 // Template is the representation of a template.
@@ -251,6 +254,15 @@ func timeAgo(ago time.Duration) string {
 // display width. If string s has multiple lines the first line will be shortened and all others
 // removed.
 func truncateMultiline(maxWidth int, s string) string {
+	if strings.HasPrefix(s, hyperlinkStart) {
+		if openEnd := strings.Index(s, stringTerminator); openEnd >= len(hyperlinkStart) {
+			closeStart := strings.LastIndex(s, hyperlinkEnd)
+			if closeStart > openEnd+len(stringTerminator) {
+				textStart := openEnd + len(stringTerminator)
+				return s[:textStart] + truncateMultiline(maxWidth, s[textStart:closeStart]) + s[closeStart:]
+			}
+		}
+	}
 	if i := strings.IndexAny(s, "\r\n"); i >= 0 {
 		s = s[:i] + ellipsis
 	}
@@ -263,7 +275,7 @@ func hyperlinkFunc(link, text string) string {
 	}
 
 	// See https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda
-	return fmt.Sprintf("\x1b]8;;%s\x1b\\%s\x1b]8;;\x1b\\", link, text)
+	return fmt.Sprintf("%s%s%s%s%s", hyperlinkStart, link, stringTerminator, text, hyperlinkEnd)
 }
 
 func sprigFuncMap() template.FuncMap {

@@ -15,6 +15,19 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestTableRowClosesTruncatedHyperlink(t *testing.T) {
+	var output bytes.Buffer
+	tmpl := New(&output, 20, true)
+	if err := tmpl.Parse(`{{tablerow (hyperlink "https://example.com" "a title longer than the terminal")}}{{tablerender}}`); err != nil {
+		t.Fatal(err)
+	}
+	if err := tmpl.Execute(strings.NewReader(`{}`)); err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, "\x1b]8;;https://example.com\x1b\\a title longer th...\x1b]8;;\x1b\\\n", output.String())
+}
+
 func ExampleTemplate() {
 	// Information about the terminal can be obtained using the [pkg/term] package.
 	colorEnabled := true
