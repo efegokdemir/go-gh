@@ -46,6 +46,16 @@ func TestEvaluateFormatted(t *testing.T) {
 			wantW: "Mona\n8\n",
 		},
 		{
+			name: "preserves scalar precision",
+			args: args{
+				json:     strings.NewReader(`{"pi":3.14159,"small":0.001,"big":123456.789}`),
+				expr:     `.pi,.small,.big`,
+				indent:   "",
+				colorize: false,
+			},
+			wantW: "3.14159\n0.001\n123456.789\n",
+		},
+		{
 			name: "object as JSON",
 			args: args{
 				json:     strings.NewReader(`{"user":{"login":"monalisa"}}`),
