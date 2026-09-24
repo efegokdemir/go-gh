@@ -35,8 +35,9 @@ var (
 // correspond to either a string value or a map value, allowing for
 // multi-level maps.
 type Config struct {
-	entries *yamlmap.Map
-	mu      sync.RWMutex
+	entries       *yamlmap.Map
+	hostsFilePath string
+	mu            sync.RWMutex
 }
 
 // Get a string value from a Config.
@@ -130,7 +131,17 @@ func (c *Config) Set(keys []string, value string) {
 }
 
 func (c *Config) deepCopy() *Config {
-	return ReadFromString(c.entries.String())
+	copy := ReadFromString(c.entries.String())
+	copy.hostsFilePath = c.hostsFilePath
+	return copy
+}
+
+// HostsFilePath returns the path of the hosts configuration file used to load
+// the configuration, or an empty string when the configuration was created in memory.
+func (c *Config) HostsFilePath() string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.hostsFilePath
 }
 
 // Read gh configuration files from the local file system and
@@ -221,7 +232,7 @@ func load(generalFilePath, hostsFilePath string, fallback *Config) (*Config, err
 		return fallback.deepCopy(), nil
 	}
 
-	return &Config{entries: generalMap}, nil
+	return &Config{entries: generalMap, hostsFilePath: hostsFilePath}, nil
 }
 
 func generalConfigFile() string {

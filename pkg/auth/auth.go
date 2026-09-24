@@ -96,6 +96,9 @@ func tokenForHost(cfg *config.Config, host string) (string, string) {
 		return "", defaultSource
 	}
 
+	if source := cfg.HostsFilePath(); source != "" {
+		return token, source
+	}
 	return token, oauthToken
 }
 

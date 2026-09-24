@@ -96,6 +96,13 @@ func TestConfigDir(t *testing.T) {
 	}
 }
 
+func TestLoadHostsFilePath(t *testing.T) {
+	hostsPath := filepath.Join(t.TempDir(), "hosts.yml")
+	cfg, err := load(filepath.Join(t.TempDir(), "config.yml"), hostsPath, nil)
+	require.NoError(t, err)
+	assert.Equal(t, hostsPath, cfg.HostsFilePath())
+}
+
 func TestStateDir(t *testing.T) {
 	tempDir := t.TempDir()
 
